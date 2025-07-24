@@ -52,3 +52,9 @@ Thumbs.db
 .pixi/
 pixi.lock
 data
+
+# Build artifacts
+*.conda
+*.tar.bz2
+recipe/
+test_install/

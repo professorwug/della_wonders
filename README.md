@@ -48,17 +48,25 @@ pip install "git+https://github.com/professorwug/della_wonders.git"
 pip install della-wonders
 ```
 
-### Install as Conda Package
+### Build and Install as Conda Package
 
 ```bash
-# The project includes pixi build configuration for creating conda packages
-# From the source directory:
+# Clone the repository
+git clone https://github.com/professorwug/della_wonders
+cd della_wonders
+
+# Build the conda package using pixi
 pixi build
 
-# This creates: della-wonders-1.0.0-pyhbf21a9e_0.conda
+# This creates a conda package file: della-wonders-1.0.0-[hash].conda
 # Install the built package in your conda environment:
-conda install ./della-wonders-1.0.0-pyhbf21a9e_0.conda
+conda install ./della-wonders-*.conda
+
+# Or install in a pixi environment:
+pixi add ./della-wonders-*.conda
 ```
+
+**Note:** Built conda packages (`*.conda` files) are excluded from git to keep the repository clean. Users should build packages locally as needed.
 
 ## Usage
 
@@ -314,6 +322,29 @@ However, some libraries ignore these environment variables, which is why explici
   }
 }
 ```
+
+## Development
+
+### Building Packages
+
+The project includes configuration for building conda packages:
+
+```bash
+# Build conda package
+pixi build
+
+# Run development tasks
+pixi run test-commands  # Test all CLI commands
+pixi run test-install   # Test pip installation
+```
+
+### Project Structure
+
+- `della_wonders/` - Main package source code
+- `pixi.toml` - Pixi build configuration for conda packages
+- `pyproject.toml` - Python package configuration
+- `recipe.yaml` - Conda recipe specification
+- `slurm/` - SLURM job scripts and configuration
 
 ## Testing
 
