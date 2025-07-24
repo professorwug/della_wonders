@@ -102,7 +102,7 @@ mkdir -p logs
 mkdir -p "$DELLA_SHARED_DIR"
 
 # Navigate to the project directory
-PROJECT_DIR="$(dirname "$(dirname "$(readlink -f "$0")")")"
+PROJECT_DIR="$(dirname "$(readlink -f "$0")")"
 cd "$PROJECT_DIR"
 
 echo "Project Directory: $(pwd)"
