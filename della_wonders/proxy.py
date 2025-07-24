@@ -118,6 +118,14 @@ class StoreForwardAddon:
                         {"Content-Type": "text/plain"}
                     )
                     ctx.log.error(f"Integrity check failed for {request_id}")
+                    
+                    # Clean up files even on integrity failure
+                    try:
+                        response_path.unlink()
+                        final_path.unlink()
+                        ctx.log.info(f"Cleaned up files after integrity failure for {request_id}")
+                    except OSError as cleanup_error:
+                        ctx.log.warning(f"Failed to cleanup files after integrity failure for {request_id}: {cleanup_error}")
                     return
                     
                 # Reconstruct HTTP response
@@ -130,6 +138,20 @@ class StoreForwardAddon:
                 
                 ctx.log.info(f"Reconstructed response for {request_id}")
                 
+                # Clean up files after successful processing
+                try:
+                    # Delete the response file
+                    response_path.unlink()
+                    ctx.log.info(f"Deleted response file: {response_path}")
+                    
+                    # Delete the original request file  
+                    final_path.unlink()
+                    ctx.log.info(f"Deleted request file: {final_path}")
+                    
+                except OSError as cleanup_error:
+                    ctx.log.warning(f"Failed to cleanup files for {request_id}: {cleanup_error}")
+                    # Don't fail the request if cleanup fails
+                
             except Exception as e:
                 ctx.log.error(f"Error processing response {request_id}: {e}")
                 flow.response = http.Response.make(
@@ -137,6 +159,16 @@ class StoreForwardAddon:
                     f"Response processing error: {str(e)}".encode(),
                     {"Content-Type": "text/plain"}
                 )
+                
+                # Clean up files even on processing error
+                try:
+                    if response_path.exists():
+                        response_path.unlink()
+                    if final_path.exists():
+                        final_path.unlink()
+                    ctx.log.info(f"Cleaned up files after processing error for {request_id}")
+                except OSError as cleanup_error:
+                    ctx.log.warning(f"Failed to cleanup files after processing error for {request_id}: {cleanup_error}")
                 
         except Exception as e:
             ctx.log.error(f"Error in request handler: {e}")

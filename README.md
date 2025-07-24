@@ -117,7 +117,7 @@ wonder_status --shared-dir /path/to/shared
 ### Environment Variables
 
 - `DELLA_SHARED_DIR`: Directory for request/response exchange (default: `/tmp/shared`)
-- `DELLA_PROXY_PORT`: Local proxy port (default: `8888`)
+- `DELLA_PROXY_PORT`: Local proxy port (default: `9025`)
 
 ### Security Configuration
 
@@ -141,6 +141,107 @@ print(response.json())
 # Run through the proxy system
 pixi run python della_wonders.py your_script.py
 ```
+
+## Using Third-Party Libraries with Requests
+
+Most third-party Python libraries that make HTTP requests use the `requests` library internally. To ensure these libraries work properly through the della_wonders proxy system, they need to be configured to:
+
+1. **Respect proxy environment variables**
+2. **Disable SSL certificate verification** (since mitmproxy generates its own certificates)
+3. **Use a properly configured requests session**
+
+### Required Modifications
+
+When using libraries that make HTTP requests (like API clients), you'll need to modify them to use a proxy-compatible session:
+
+```python
+import requests
+import os
+
+# Create a session that works with della_wonders proxy
+session = requests.Session()
+session.verify = False  # Disable SSL verification for proxy compatibility
+session.trust_env = True  # Use proxy settings from environment variables
+
+# Set proxies explicitly from environment if available
+http_proxy = os.getenv('HTTP_PROXY') or os.getenv('http_proxy')
+https_proxy = os.getenv('HTTPS_PROXY') or os.getenv('https_proxy')
+if http_proxy or https_proxy:
+    session.proxies.update({
+        'http': http_proxy,
+        'https': https_proxy
+    })
+
+# Use the session for all requests
+response = session.get("https://api.example.com/data")
+```
+
+### Example: Modifying a Third-Party API Client
+
+If you have a third-party API client class like this:
+
+```python
+class APIClient:
+    def __init__(self, api_key):
+        self.api_key = api_key
+        self.base_url = "https://api.example.com"
+    
+    def make_request(self, endpoint):
+        # Original code that won't work with proxy:
+        response = requests.get(f"{self.base_url}{endpoint}", 
+                              headers={"Authorization": f"Bearer {self.api_key}"})
+        return response.json()
+```
+
+Modify it to use a proxy-compatible session:
+
+```python
+class APIClient:
+    def __init__(self, api_key):
+        self.api_key = api_key
+        self.base_url = "https://api.example.com"
+        
+        # Create proxy-compatible session
+        self.session = requests.Session()
+        self.session.verify = False
+        self.session.trust_env = True
+        
+        # Set proxies explicitly
+        http_proxy = os.getenv('HTTP_PROXY') or os.getenv('http_proxy')
+        https_proxy = os.getenv('HTTPS_PROXY') or os.getenv('https_proxy')
+        if http_proxy or https_proxy:
+            self.session.proxies.update({
+                'http': http_proxy,
+                'https': https_proxy
+            })
+    
+    def make_request(self, endpoint):
+        # Modified code that works with proxy:
+        response = self.session.get(f"{self.base_url}{endpoint}", 
+                                  headers={"Authorization": f"Bearer {self.api_key}"})
+        return response.json()
+```
+
+### Common SSL Issues
+
+If you see errors like:
+- `[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed`
+- `HTTPSConnectionPool(host='...', port=443): Max retries exceeded`
+- `unable to get local issuer certificate`
+
+These indicate that SSL verification needs to be disabled for the proxy to work. The modifications above will resolve these issues.
+
+### Environment Variables Set by della_wonders
+
+When you run `wonder_run`, the following environment variables are automatically set for your script:
+
+- `HTTP_PROXY=http://127.0.0.1:9025`
+- `HTTPS_PROXY=http://127.0.0.1:9025`
+- `REQUESTS_CA_BUNDLE=""` (disabled)
+- `PYTHONHTTPSVERIFY=0` (disabled)
+- `SSL_VERIFY=False` (disabled)
+
+However, some libraries ignore these environment variables, which is why explicit session configuration is necessary.
 
 ## File Format
 

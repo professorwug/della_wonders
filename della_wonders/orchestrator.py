@@ -14,7 +14,7 @@ import logging
 class DellaWondersOrchestrator:
     """Main orchestrator for running scripts through the store-and-forward proxy"""
     
-    def __init__(self, shared_dir="/tmp/shared", proxy_port=8888):
+    def __init__(self, shared_dir="/tmp/shared", proxy_port=9025):
         self.shared_dir = Path(shared_dir)
         self.proxy_port = proxy_port
         self.proxy_process = None
@@ -48,7 +48,8 @@ class DellaWondersOrchestrator:
             "-s", str(proxy_script),
             "-p", str(self.proxy_port),
             "--set", f"shared_dir={self.shared_dir}",
-            "--set", "confdir=~/.mitmproxy"
+            "--set", "confdir=~/.mitmproxy",
+            "--ssl-insecure"  # Allow insecure SSL connections
         ]
         
         self.logger.info(f"Starting mitmproxy: {' '.join(cmd)}")
@@ -81,6 +82,11 @@ class DellaWondersOrchestrator:
             "HTTPS_PROXY": f"http://127.0.0.1:{self.proxy_port}",
             "REQUESTS_CA_BUNDLE": "",  # Disable SSL verification for proxy
             "CURL_CA_BUNDLE": "",
+            "SSL_VERIFY": "False",  # Additional SSL disable
+            "PYTHONHTTPSVERIFY": "0",  # Python-specific SSL disable
+            # Set certificate paths to empty to disable SSL verification
+            "SSL_CERT_FILE": "",
+            "SSL_CERT_DIR": "",
         })
         
         cmd = ["python", script_path] + script_args

@@ -140,6 +140,14 @@ class WonderDellaProcessor:
             
             self.logger.info(f"Response written for {request_id}")
             
+            # Clean up the request file after successful processing
+            # Note: The proxy will clean up the response file after consumption
+            try:
+                request_file.unlink()
+                self.logger.info(f"Deleted request file after successful processing: {request_file}")
+            except OSError as cleanup_error:
+                self.logger.warning(f"Failed to cleanup request file for {request_id}: {cleanup_error}")
+            
         except Exception as e:
             self.logger.error(f"Error processing {request_id}: {e}")
             self.create_error_response(request_id, 502, f"Processing error: {str(e)}")
@@ -204,6 +212,15 @@ class WonderDellaProcessor:
         with temp_path.open("w") as f:
             json.dump(response_data, f, indent=2)
         os.rename(temp_path, response_file)
+        
+        # Clean up the request file since we created an error response
+        request_file = self.request_dir / f"{request_id}.json"
+        try:
+            if request_file.exists():
+                request_file.unlink()
+                self.logger.info(f"Deleted request file after error response: {request_file}")
+        except OSError as cleanup_error:
+            self.logger.warning(f"Failed to cleanup request file after error for {request_id}: {cleanup_error}")
         
     def shutdown(self):
         """Graceful shutdown"""

@@ -34,8 +34,8 @@ def wonder_run():
     parser.add_argument(
         "--proxy-port", 
         type=int,
-        default=int(os.environ.get("DELLA_PROXY_PORT", "8888")),
-        help="Local proxy port (default: 8888)"
+        default=int(os.environ.get("DELLA_PROXY_PORT", "9025")),
+        help="Local proxy port (default: 9025)"
     )
     parser.add_argument(
         "--verbose", "-v",
