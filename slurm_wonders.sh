@@ -102,8 +102,18 @@ mkdir -p logs
 mkdir -p "$DELLA_SHARED_DIR"
 
 # Navigate to the project directory
-PROJECT_DIR="$(dirname "$(readlink -f "$0")")"
-cd "$PROJECT_DIR"
+# Try common della_wonders project locations
+if [[ -d "/scratch/gpfs/\$USER/della_wonders" ]]; then
+    cd "/scratch/gpfs/\$USER/della_wonders"
+elif [[ -d "\$HOME/src/della_wonders" ]]; then
+    cd "\$HOME/src/della_wonders"
+elif [[ -d "\$HOME/della_wonders" ]]; then
+    cd "\$HOME/della_wonders"
+else
+    echo "ERROR: Could not find della_wonders project directory"
+    echo "Tried: /scratch/gpfs/\$USER/della_wonders, \$HOME/src/della_wonders, \$HOME/della_wonders"
+    exit 1
+fi
 
 echo "Project Directory: $(pwd)"
 echo "=================================================================="
