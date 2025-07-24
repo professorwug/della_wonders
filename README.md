@@ -42,6 +42,16 @@ pixi add --pypi "della-wonders @ git+https://github.com/professorwug/della_wonde
 pip install "git+https://github.com/professorwug/della_wonders.git"
 ```
 
+### Install from Conda (Recommended)
+
+```bash
+# Install from anaconda.org
+conda install -c wug della-wonders
+
+# Or with pixi
+pixi add -c wug della-wonders
+```
+
 ### Install from PyPI (when published)
 
 ```bash
@@ -337,6 +347,24 @@ pixi build
 pixi run test-commands  # Test all CLI commands
 pixi run test-install   # Test pip installation
 ```
+
+### Publishing to Anaconda.org
+
+To publish the conda package to anaconda.org:
+
+1. **Get an API token** from https://anaconda.org/settings/access
+2. **Set the token** as an environment variable:
+   ```bash
+   export ANACONDA_API_TOKEN=your_token_here
+   ```
+3. **Upload the package**:
+   ```bash
+   pixi run upload-conda
+   # or
+   ./upload_conda.sh
+   ```
+
+The package will be available at: https://anaconda.org/wug/della-wonders
 
 ### Project Structure
 

@@ -58,3 +58,6 @@ data
 *.tar.bz2
 recipe/
 test_install/
+
+# Anaconda credentials
+.anaconda/
