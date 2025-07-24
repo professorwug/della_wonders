@@ -14,7 +14,16 @@ import logging
 class DellaWondersOrchestrator:
     """Main orchestrator for running scripts through the store-and-forward proxy"""
     
-    def __init__(self, shared_dir="/tmp/shared", proxy_port=9025):
+    def __init__(self, shared_dir=None, proxy_port=9025):
+        if shared_dir is None:
+            import os
+            user = os.environ.get('USER', 'unknown')
+            # Try Princeton's scratch space first, fallback to /tmp if not available
+            scratch_path = f"/scratch/gpfs/{user}/.wonders"
+            if os.path.exists("/scratch/gpfs") and os.access("/scratch/gpfs", os.W_OK):
+                shared_dir = scratch_path
+            else:
+                shared_dir = f"/tmp/shared_{user}"
         self.shared_dir = Path(shared_dir)
         self.proxy_port = proxy_port
         self.proxy_process = None

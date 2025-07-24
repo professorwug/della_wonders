@@ -39,7 +39,7 @@ pip install della-wonders
 
 ## Usage
 
-After installation, you have access to three main commands:
+After installation, you have access to four main commands:
 
 ### 1. Start the Internet-side Processor
 
@@ -116,7 +116,7 @@ wonder_status --shared-dir /path/to/shared
 
 ### Environment Variables
 
-- `DELLA_SHARED_DIR`: Directory for request/response exchange (default: `/tmp/shared`)
+- `DELLA_SHARED_DIR`: Directory for request/response exchange (default: `/scratch/gpfs/$USER/.wonders`)
 - `DELLA_PROXY_PORT`: Local proxy port (default: `9025`)
 
 ### Security Configuration
@@ -333,6 +333,41 @@ Check the status of the della_wonders system.
 
 **Options:**
 - `--shared-dir PATH`: Directory for request/response exchange (default: `/tmp/shared`)
+
+### `wonder_bread`
+Display ASCII art of a loaf of bread for your viewing pleasure.
+
+**Usage:** `wonder_bread`
+
+A delightful command that brings a smile to your day while working with proxy systems!
+
+## HPC/SLURM Integration
+
+For long-running deployments on HPC clusters, della_wonders includes SLURM job scripts:
+
+```bash
+# Quick start - submit with default 24-hour limit
+./slurm/submit_wonders.sh
+
+# Custom configuration
+cp slurm/config.env my_config.env
+# Edit my_config.env with your cluster settings
+./slurm/submit_wonders.sh my_config.env
+
+# Monitor the job
+squeue -u $USER
+tail -f logs/start_wonders_<job_id>.out
+```
+
+The SLURM integration provides:
+- **Configurable time limits** (2 hours to 7+ days)
+- **Resource management** (CPU, memory, partition selection)
+- **Email notifications** for job status
+- **Graceful shutdown handling**
+- **Real-time logging** with timestamps
+- **Example configurations** for different scenarios
+
+See `slurm/README.md` for complete documentation and Princeton Research Computing specific guidance.
 
 ## Limitations
 

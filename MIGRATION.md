@@ -35,7 +35,7 @@ Environment variables work the same way:
 
 ```bash
 # Both old and new support these variables
-export DELLA_SHARED_DIR=/path/to/shared
+export DELLA_SHARED_DIR=/scratch/gpfs/$USER/.wonders
 export DELLA_PROXY_PORT=9025
 
 # Old

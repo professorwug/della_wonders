@@ -35,6 +35,7 @@ Issues = "https://github.com/professorwug/della_wonders/issues"
 wonder_run = "della_wonders.cli:wonder_run"
 start_wonders = "della_wonders.cli:start_wonders"
 wonder_status = "della_wonders.cli:wonder_status"
+wonder_bread = "della_wonders.cli:wonder_bread"
 
 [build-system]
 requires = ["hatchling"]

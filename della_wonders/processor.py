@@ -21,7 +21,16 @@ from .security import SecurityFilter
 class WonderDellaProcessor:
     """Internet-side processor for handling requests with security filtering"""
     
-    def __init__(self, shared_dir="/tmp/shared"):
+    def __init__(self, shared_dir=None):
+        if shared_dir is None:
+            import os
+            user = os.environ.get('USER', 'unknown')
+            # Try Princeton's scratch space first, fallback to /tmp if not available
+            scratch_path = f"/scratch/gpfs/{user}/.wonders"
+            if os.path.exists("/scratch/gpfs") and os.access("/scratch/gpfs", os.W_OK):
+                shared_dir = scratch_path
+            else:
+                shared_dir = f"/tmp/shared_{user}"
         self.shared_dir = Path(shared_dir)
         self.request_dir = self.shared_dir / "requests"
         self.response_dir = self.shared_dir / "responses"

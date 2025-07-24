@@ -13,6 +13,17 @@ from .processor import WonderDellaProcessor
 
 def wonder_run():
     """Entry point for 'wonder_run' command"""
+    def get_default_shared_dir():
+        if "DELLA_SHARED_DIR" in os.environ:
+            return os.environ["DELLA_SHARED_DIR"]
+        user = os.environ.get('USER', 'unknown')
+        # Try Princeton's scratch space first, fallback to /tmp if not available
+        scratch_path = f"/scratch/gpfs/{user}/.wonders"
+        if os.path.exists("/scratch/gpfs") and os.access("/scratch/gpfs", os.W_OK):
+            return scratch_path
+        else:
+            return f"/tmp/shared_{user}"
+    
     parser = argparse.ArgumentParser(
         description="Run a Python script through the della_wonders store-and-forward proxy",
         prog="wonder_run"
@@ -28,8 +39,8 @@ def wonder_run():
     )
     parser.add_argument(
         "--shared-dir", 
-        default=os.environ.get("DELLA_SHARED_DIR", "/tmp/shared"),
-        help="Directory for request/response exchange (default: /tmp/shared)"
+        default=get_default_shared_dir(),
+        help="Directory for request/response exchange (default: /scratch/gpfs/$USER/.wonders, fallback: /tmp/shared_$USER)"
     )
     parser.add_argument(
         "--proxy-port", 
@@ -75,14 +86,25 @@ def wonder_run():
 
 def start_wonders():
     """Entry point for 'start_wonders' command (internet-side processor)"""
+    def get_default_shared_dir():
+        if "DELLA_SHARED_DIR" in os.environ:
+            return os.environ["DELLA_SHARED_DIR"]
+        user = os.environ.get('USER', 'unknown')
+        # Try Princeton's scratch space first, fallback to /tmp if not available
+        scratch_path = f"/scratch/gpfs/{user}/.wonders"
+        if os.path.exists("/scratch/gpfs") and os.access("/scratch/gpfs", os.W_OK):
+            return scratch_path
+        else:
+            return f"/tmp/shared_{user}"
+    
     parser = argparse.ArgumentParser(
         description="Run the internet-side processor for della_wonders proxy",
         prog="start_wonders"
     )
     parser.add_argument(
         "--shared-dir", 
-        default=os.environ.get("DELLA_SHARED_DIR", "/tmp/shared"),
-        help="Directory for request/response exchange (default: /tmp/shared)"
+        default=get_default_shared_dir(),
+        help="Directory for request/response exchange (default: /scratch/gpfs/$USER/.wonders, fallback: /tmp/shared_$USER)"
     )
     parser.add_argument(
         "--verbose", "-v",
@@ -133,14 +155,25 @@ def start_wonders():
 
 def wonder_status():
     """Entry point for 'wonder_status' command"""
+    def get_default_shared_dir():
+        if "DELLA_SHARED_DIR" in os.environ:
+            return os.environ["DELLA_SHARED_DIR"]
+        user = os.environ.get('USER', 'unknown')
+        # Try Princeton's scratch space first, fallback to /tmp if not available
+        scratch_path = f"/scratch/gpfs/{user}/.wonders"
+        if os.path.exists("/scratch/gpfs") and os.access("/scratch/gpfs", os.W_OK):
+            return scratch_path
+        else:
+            return f"/tmp/shared_{user}"
+    
     parser = argparse.ArgumentParser(
         description="Check status of della_wonders system",
         prog="wonder_status"
     )
     parser.add_argument(
         "--shared-dir", 
-        default=os.environ.get("DELLA_SHARED_DIR", "/tmp/shared"),
-        help="Directory for request/response exchange (default: /tmp/shared)"
+        default=get_default_shared_dir(),
+        help="Directory for request/response exchange (default: /scratch/gpfs/$USER/.wonders, fallback: /tmp/shared_$USER)"
     )
     
     args = parser.parse_args()
@@ -168,6 +201,42 @@ def wonder_status():
             print(f"  Responses: {responses}")
     else:
         print("Shared directory does not exist. Run wonder_run or wonder_process to create it.")
+
+
+def wonder_bread():
+    """Entry point for 'wonder_bread' command - displays ASCII art of bread"""
+    bread_art = """
+    🍞 WONDER BREAD 🍞
+    
+        ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+      ,'                                           ',
+     /                                               \\
+    |    ████████████████████████████████████████    |
+    |   ██                                      ██   |
+    |  ██    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░    ██  |
+    |  ██   ░                                ░   ██  |
+    |  ██  ░    ░░░░░░░░░░░░░░░░░░░░░░░░░░    ░  ██  |
+    |  ██  ░   ░                          ░   ░  ██  |
+    |  ██  ░  ░    ░░░░░░░░░░░░░░░░░░░░    ░  ░  ██  |
+    |  ██  ░  ░   ░                    ░   ░  ░  ██  |
+    |  ██  ░  ░  ░   A LOAF OF WONDER   ░  ░  ░  ██  |
+    |  ██  ░  ░   ░                    ░   ░  ░  ██  |
+    |  ██  ░  ░    ░░░░░░░░░░░░░░░░░░░░    ░  ░  ██  |
+    |  ██  ░   ░                          ░   ░  ██  |
+    |  ██  ░    ░░░░░░░░░░░░░░░░░░░░░░░░░░    ░  ██  |
+    |  ██   ░                                ░   ██  |
+    |  ██    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░    ██  |
+    |   ██                                      ██   |
+    |    ████████████████████████████████████████    |
+     \\                                               /
+      ',                                           ,'
+        '''''''''''''''''''''''''''''''''''''''''''
+        
+    "Builds wonder, one slice at a time." ™
+    """
+    
+    print(bread_art)
+    print("\n✨ May your proxy requests be as fresh as Wonder Bread! ✨")
 
 
 def main():
