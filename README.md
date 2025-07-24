@@ -49,13 +49,8 @@ pip install "git+https://github.com/professorwug/della_wonders.git"
 conda install -c wug della-wonders
 
 # Or with pixi
-pixi add -c wug della-wonders
-```
-
-### Install from PyPI (when published)
-
-```bash
-pip install della-wonders
+pixi project channel add wug  # Add the wug channel to your project
+pixi add della-wonders
 ```
 
 ### Build and Install as Conda Package
