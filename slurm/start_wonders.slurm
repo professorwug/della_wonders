@@ -29,7 +29,7 @@ echo "=================================================================="
 
 # Environment setup
 echo "Setting up environment..."
-
+cd /scratch/gpfs/$USER/della_wonders/
 # Load any required modules (uncomment if needed)
 # module load anaconda3/2023.9
 # module load python/3.11
