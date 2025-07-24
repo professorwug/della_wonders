@@ -59,6 +59,7 @@ cd "$PROJECT_DIR"
 
 echo "Project Directory: $(pwd)"
 echo "=================================================================="
+ls
 
 # Check if pixi is available
 if ! command -v pixi &> /dev/null; then
