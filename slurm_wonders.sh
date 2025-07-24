@@ -20,6 +20,10 @@ echo "Using configuration file: $CONFIG_FILE"
 # Load configuration
 source "$CONFIG_FILE"
 
+# Capture the current working directory to hardcode in SLURM script
+CURRENT_PWD="$(pwd)"
+echo "Capturing current directory for SLURM script: $CURRENT_PWD"
+
 # Set defaults if not specified
 JOB_NAME="${JOB_NAME:-della-wonders}"
 TIME_LIMIT="${TIME_LIMIT:-24:00:00}"
@@ -101,19 +105,8 @@ mkdir -p logs
 # Create shared directory if it doesn't exist
 mkdir -p "$DELLA_SHARED_DIR"
 
-# Navigate to the project directory
-# Try common della_wonders project locations
-if [[ -d "/scratch/gpfs/\$USER/della_wonders" ]]; then
-    cd "/scratch/gpfs/\$USER/della_wonders"
-elif [[ -d "\$HOME/src/della_wonders" ]]; then
-    cd "\$HOME/src/della_wonders"
-elif [[ -d "\$HOME/della_wonders" ]]; then
-    cd "\$HOME/della_wonders"
-else
-    echo "ERROR: Could not find della_wonders project directory"
-    echo "Tried: /scratch/gpfs/\$USER/della_wonders, \$HOME/src/della_wonders, \$HOME/della_wonders"
-    exit 1
-fi
+# Navigate to the project directory (hardcoded from submission time)
+cd "REPLACE_WITH_CURRENT_PWD"
 
 echo "Project Directory: $(pwd)"
 echo "=================================================================="
@@ -178,6 +171,9 @@ echo "start_wonders exited normally at: $(date)"
 echo "=================================================================="
 EOF
 
+# Replace the placeholder with the actual current directory
+sed -i "s|REPLACE_WITH_CURRENT_PWD|$CURRENT_PWD|g" "$TEMP_SCRIPT"
+
 # Make the temporary script executable
 chmod +x "$TEMP_SCRIPT"
 
@@ -193,6 +189,7 @@ echo "CPUs per Task: $CPUS_PER_TASK"
 echo "Partition: $PARTITION"
 echo "Shared Directory: $DELLA_SHARED_DIR"
 echo "Proxy Port: $DELLA_PROXY_PORT"
+echo "Project Directory: $CURRENT_PWD"
 
 if [[ -n "$BLOCKED_DOMAINS" ]]; then
     echo "Blocked Domains: $BLOCKED_DOMAINS"
