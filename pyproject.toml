@@ -57,8 +57,11 @@ python-dateutil = ">=2.9.0.post0,<3"
 [tool.pixi.pypi-dependencies]
 della-wonders = { path = ".", editable = true }
 
+# Configure for pixi build - requires build recipe configuration
+
 [tool.pixi.tasks]
 install = "pip install -e ."
 test-install = "pip install -e . && wonder_run --help"
 test-commands = "wonder_run --help && start_wonders --help && wonder_status --help"
 run-test = "wonder_run test_script.py"
+build = "pixi build"

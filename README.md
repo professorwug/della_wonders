@@ -31,10 +31,33 @@ pip install -e .
 pixi install
 ```
 
+### Install from Git Repository (Recommended)
+
+```bash
+# Using pixi (adds to existing project)
+pixi add python  # If not already present
+pixi add --pypi "della-wonders @ git+https://github.com/professorwug/della_wonders.git"
+
+# Using pip directly
+pip install "git+https://github.com/professorwug/della_wonders.git"
+```
+
 ### Install from PyPI (when published)
 
 ```bash
 pip install della-wonders
+```
+
+### Install as Conda Package
+
+```bash
+# The project includes pixi build configuration for creating conda packages
+# From the source directory:
+pixi build
+
+# This creates: della-wonders-1.0.0-pyhbf21a9e_0.conda
+# Install the built package in your conda environment:
+conda install ./della-wonders-1.0.0-pyhbf21a9e_0.conda
 ```
 
 ## Usage
