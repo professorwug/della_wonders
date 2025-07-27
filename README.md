@@ -1,21 +1,45 @@
-# Della Wonders - Store-and-Forward HTTP Proxy
+# Della Wonders
 
-A secure store-and-forward HTTP proxy system for airgapped environments. This system allows scripts on airgapped machines to make controllable network requests via a file-based proxy mechanism.
+Princeton's DELLA cluster wisely airgaps its GPU cluster, which protects against abuse by crypto miners or lavish self-hosted chatbots -- but makes it hard to perform training runs that rely on external resources (e.g. LLM-as-a-Judge calls, or agentic open search).
 
-## Architecture
+`della_wonders` is a utility which allows scripts on DELLA's GPUs to make limited, controllable network requests to the outside world. This is accomplished by a "store-and-forward" proxy which uses Della's shared filesystem to convey HTTP requests from an air-gapped GPU node to a helper process on an internet-enabled node. 
 
-The system consists of three main components:
+Rather marvelously, because this is realized as an HTTP *proxy*, you need make no modifications to your training scripts: just use our helper script `wonder_run`, to start them, and their network requests will be seamlessly handled.
 
-1. **`DellaWondersOrchestrator`** - Main orchestrator running on the airgapped machine
-2. **`StoreForwardAddon`** - mitmproxy addon that serializes HTTP requests/responses to JSON files
-3. **`WonderDellaProcessor`** - Internet-side processor that handles requests with security filtering
+To use `della_wonders`, there are two steps:
+
+1. Log into an internet-enabled Della node, clone this repo, and start the helper process by running 
+
+	```
+	bash slurm_wonders.sh
+	```
+
+	This will submit a slurm job to run the helper process for 24 hrs, by default. 
+2. Meanwhile, in the repo where you intend to launch your training run, install the package with `conda install -c wug della_wonders`. **Wait until the job from (1) has started**, then launch your training run with some slurm script that include 
+	```
+	wonder_run your_python_file.py
+	```
+	`wonder_run` launches your Python script with a subprocess, but with network traffic proxied to the helper.
+
+If your script fails to run, you may have to insert a few lines of code to loosen the network security of common packages like `requests`. See "Using Third-Party Libraries with Requests", below.
 
 ## Installation
 
 ### Prerequisites
 
 - Python 3.11+
-- pip or pixi package manager
+- conda or pixi package manager
+
+### Install from Conda (Recommended)
+
+```bash
+# Install from anaconda.org
+conda install -c wug della-wonders
+
+# Or with pixi
+pixi project channel add wug  # Add the wug channel to your project
+pixi add della-wonders
+```
 
 ### Install from Source
 
@@ -29,28 +53,6 @@ pip install -e .
 
 # Or install with pixi (for development)
 pixi install
-```
-
-### Install from Git Repository (Recommended)
-
-```bash
-# Using pixi (adds to existing project)
-pixi add python  # If not already present
-pixi add --pypi "della-wonders @ git+https://github.com/professorwug/della_wonders.git"
-
-# Using pip directly
-pip install "git+https://github.com/professorwug/della_wonders.git"
-```
-
-### Install from Conda (Recommended)
-
-```bash
-# Install from anaconda.org
-conda install -c wug della-wonders
-
-# Or with pixi
-pixi project channel add wug  # Add the wug channel to your project
-pixi add della-wonders
 ```
 
 ### Build and Install as Conda Package
@@ -139,6 +141,16 @@ wonder_status --shared-dir /path/to/shared
 3. **Response Flow**:
    - The proxy detects the response file and reconstructs the HTTP response
    - Your script receives the response as if it came directly from the internet
+
+
+## Architecture
+
+The system consists of three main components:
+
+1. **`DellaWondersOrchestrator`** - Main orchestrator running on the airgapped machine
+2. **`StoreForwardAddon`** - mitmproxy addon that serializes HTTP requests/responses to JSON files
+3. **`WonderDellaProcessor`** - Internet-side processor that handles requests with security filtering
+
 
 ## Security Features
 
