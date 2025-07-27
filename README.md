@@ -23,14 +23,6 @@ To use `della_wonders`, there are two steps:
 
 If your script fails to run, you may have to insert a few lines of code to loosen the network security of common packages like `requests`. See "Required Modifications", below.
 
-## Architecture
-
-The system consists of three main components:
-
-1. **`DellaWondersOrchestrator`** - Main orchestrator running on the airgapped machine
-2. **`StoreForwardAddon`** - mitmproxy addon that serializes HTTP requests/responses to JSON files
-3. **`WonderDellaProcessor`** - Internet-side processor that handles requests with security filtering
-
 ## Installation
 
 ### Prerequisites
@@ -149,6 +141,16 @@ wonder_status --shared-dir /path/to/shared
 3. **Response Flow**:
    - The proxy detects the response file and reconstructs the HTTP response
    - Your script receives the response as if it came directly from the internet
+
+
+## Architecture
+
+The system consists of three main components:
+
+1. **`DellaWondersOrchestrator`** - Main orchestrator running on the airgapped machine
+2. **`StoreForwardAddon`** - mitmproxy addon that serializes HTTP requests/responses to JSON files
+3. **`WonderDellaProcessor`** - Internet-side processor that handles requests with security filtering
+
 
 ## Security Features
 
