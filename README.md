@@ -21,7 +21,7 @@ To use `della_wonders`, there are two steps:
 	```
 	`wonder_run` launches your Python script with a subprocess, but with network traffic proxied to the helper.
 
-If your script fails to run, you may have to insert a few lines of code to loosen the network security of common packages like `requests`. See 'Required Modifications', below.
+If your script fails to run, you may have to insert a few lines of code to loosen the network security of common packages like `requests`. See "Required Modifications", below.
 
 ## Architecture
 
