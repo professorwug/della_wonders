@@ -34,7 +34,8 @@ If your script fails to run, you may have to insert a few lines of code to loose
 
 ```bash
 # Install from anaconda.org
-conda install -c wug della-wonders
+conda install -c wug -c conda-forge della-wonders
+# some conda dists search conda-forge automatically
 
 # Or with pixi
 pixi project channel add wug  # Add the wug channel to your project
