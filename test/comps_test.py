@@ -10,7 +10,86 @@ import random
 from collections import defaultdict, Counter
 import statistics
 import sys
+import os
+from pathlib import Path
 from datetime import datetime
+
+
+def analyze_processor_logs(shared_dir: str, test_start_time: datetime, test_end_time: datetime):
+    """Analyze processor logs to count requests processed during test"""
+    logs_dir = Path(shared_dir) / "logs"
+    processor_log = logs_dir / "processor.log"
+    
+    if not processor_log.exists():
+        return {
+            'log_found': False,
+            'requests_detected': 0,
+            'requests_started': 0,
+            'requests_succeeded': 0,
+            'requests_failed': 0,
+            'requests_skipped': 0,
+            'error': 'No processor log found'
+        }
+    
+    # Parse log entries within test timeframe
+    requests_detected = 0
+    requests_started = 0
+    requests_succeeded = 0
+    requests_failed = 0
+    requests_skipped = 0
+    
+    try:
+        with processor_log.open('r') as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                    
+                # Parse timestamp from log line (format: 2025-01-XX HH:MM:SS,mmm)
+                try:
+                    timestamp_str = line.split(' - ')[0]
+                    log_time = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S,%f')
+                    
+                    # Only count logs within test timeframe
+                    if test_start_time <= log_time <= test_end_time:
+                        if 'SCAN: Found' in line and 'request files' in line:
+                            # Extract number of files found
+                            parts = line.split('Found ')
+                            if len(parts) > 1:
+                                num_str = parts[1].split(' ')[0]
+                                requests_detected += int(num_str)
+                        elif 'REQUEST_START:' in line:
+                            requests_started += 1
+                        elif 'REQUEST_SUCCESS:' in line:
+                            requests_succeeded += 1
+                        elif 'REQUEST_FAILED:' in line:
+                            requests_failed += 1
+                        elif 'REQUEST_SKIP:' in line:
+                            requests_skipped += 1
+                            
+                except (ValueError, IndexError):
+                    # Skip malformed log lines
+                    continue
+                    
+    except Exception as e:
+        return {
+            'log_found': True,
+            'requests_detected': 0,
+            'requests_started': 0,
+            'requests_succeeded': 0,
+            'requests_failed': 0,
+            'requests_skipped': 0,
+            'error': f'Error reading log: {e}'
+        }
+    
+    return {
+        'log_found': True,
+        'requests_detected': requests_detected,
+        'requests_started': requests_started,
+        'requests_succeeded': requests_succeeded,
+        'requests_failed': requests_failed,
+        'requests_skipped': requests_skipped,
+        'error': None
+    }
 
 
 def main():
@@ -22,6 +101,15 @@ def main():
     num_tests = 60  # Many dozen tests
     base_url = "http://httpbun.org"
     endpoints = ["/get", "/json", "/user-agent", "/headers", "/ip"]
+    
+    # Get shared directory (same logic as processor)
+    shared_dir = os.environ.get('DELLA_SHARED_DIR')
+    if not shared_dir:
+        user = os.environ.get('USER', 'unknown')
+        if os.path.exists("/scratch/gpfs") and os.access("/scratch/gpfs", os.W_OK):
+            shared_dir = f"/scratch/gpfs/{user}/.wonders"
+        else:
+            shared_dir = f"/tmp/shared_{user}"
     
     # Results tracking
     results = []
@@ -109,6 +197,10 @@ def main():
     failures = [r for r in results if r['status'] == 'FAILURE']
     success_rate = len(successes) / len(results) * 100
     
+    # Analyze processor logs
+    print("\n🔍 Analyzing processor logs...")
+    processor_stats = analyze_processor_logs(shared_dir, start_time, end_time)
+    
     # Print detailed results
     print("\n" + "=" * 60)
     print("📊 TEST RESULTS SUMMARY")
@@ -119,6 +211,31 @@ def main():
     print(f"Failures: {len(failures)} ({100-success_rate:.1f}%)")
     print(f"Total Duration: {total_duration:.2f} seconds")
     print(f"End Time: {end_time.strftime('%H:%M:%S')}")
+    print(f"Shared Directory: {shared_dir}")
+    
+    # Processor statistics
+    if processor_stats['log_found']:
+        print(f"\n🔧 PROCESSOR STATISTICS:")
+        print(f"Requests Detected: {processor_stats['requests_detected']}")
+        print(f"Requests Started: {processor_stats['requests_started']}")
+        print(f"Requests Succeeded: {processor_stats['requests_succeeded']}")
+        print(f"Requests Failed: {processor_stats['requests_failed']}")
+        print(f"Requests Skipped: {processor_stats['requests_skipped']}")
+        
+        # Calculate processor success rate
+        total_processed = processor_stats['requests_started']
+        if total_processed > 0:
+            processor_success_rate = processor_stats['requests_succeeded'] / total_processed * 100
+            print(f"Processor Success Rate: {processor_success_rate:.1f}%")
+            
+            # Compare proxy vs processor
+            detection_rate = processor_stats['requests_detected'] / len(results) * 100
+            processing_rate = processor_stats['requests_started'] / len(results) * 100
+            print(f"Detection Rate: {detection_rate:.1f}% ({processor_stats['requests_detected']}/{len(results)})")
+            print(f"Processing Rate: {processing_rate:.1f}% ({processor_stats['requests_started']}/{len(results)})")
+    else:
+        print(f"\n⚠️  PROCESSOR LOG ANALYSIS FAILED:")
+        print(f"Error: {processor_stats['error']}")
     
     # Status code breakdown
     if status_codes:
@@ -179,6 +296,23 @@ def main():
     if 404 in status_codes:
         not_found = status_codes[404] 
         print(f"  📍 404 errors: {not_found} - Endpoint availability issues")
+    
+    # Processor vs Proxy diagnostic insights
+    if processor_stats['log_found'] and processor_stats['requests_started'] > 0:
+        detection_rate = processor_stats['requests_detected'] / len(results) * 100
+        processing_rate = processor_stats['requests_started'] / len(results) * 100
+        
+        if detection_rate < 50:
+            print(f"  🚨 Low detection rate ({detection_rate:.1f}%) - Processor missing many requests")
+        elif processing_rate < detection_rate * 0.8:
+            print(f"  ⚠️  Detection vs processing gap - Some requests not being processed")
+        
+        # Compare success rates
+        processor_success_rate = processor_stats['requests_succeeded'] / processor_stats['requests_started'] * 100
+        if processor_success_rate > success_rate + 20:
+            print(f"  🔍 Processor succeeding ({processor_success_rate:.1f}%) but proxy failing ({success_rate:.1f}%) - Response delivery issue")
+        elif processor_success_rate < 50:
+            print(f"  💥 Processor itself failing ({processor_success_rate:.1f}%) - HTTP request issues")
     
     if response_times and statistics.mean(response_times) > 5.0:
         print("  ⚠️  High average response times detected")

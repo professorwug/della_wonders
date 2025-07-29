@@ -45,6 +45,21 @@ class WonderDellaProcessor:
         )
         self.logger = logging.getLogger(__name__)
         
+        # Setup shared file logging for diagnostics
+        self.logs_dir = self.shared_dir / "logs"
+        self.logs_dir.mkdir(exist_ok=True)
+        
+        # Create a separate file handler for shared logging
+        log_file = self.logs_dir / "processor.log"
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setLevel(logging.INFO)
+        file_formatter = logging.Formatter('%(asctime)s - PROCESSOR - %(levelname)s - %(message)s')
+        file_handler.setFormatter(file_formatter)
+        
+        # Add file handler to logger
+        self.logger.addHandler(file_handler)
+        self.shared_logger = self.logger  # Reference for shared logging
+        
         # Ensure directories exist
         for dir_path in [self.request_dir, self.response_dir]:
             dir_path.mkdir(parents=True, exist_ok=True)
@@ -86,12 +101,17 @@ class WonderDellaProcessor:
                 # Process all pending request files
                 request_files = list(self.request_dir.glob("*.json"))
                 if request_files:
-                    self.logger.info(f"Found {len(request_files)} request files")
+                    self.logger.info(f"SCAN: Found {len(request_files)} request files")
                     
                 for request_file in request_files:
                     if not self.running:
                         break
-                    self.process_single_request(request_file)
+                    self.logger.info(f"REQUEST_START: Processing {request_file.name}")
+                    result = self.process_single_request(request_file)
+                    if result:
+                        self.logger.info(f"REQUEST_SUCCESS: Completed {request_file.name}")
+                    else:
+                        self.logger.error(f"REQUEST_FAILED: Error processing {request_file.name}")
                 
                 # Periodic cache cleanup to prevent DNS resolution issues
                 current_time = time_module.time()
@@ -115,7 +135,8 @@ class WonderDellaProcessor:
         
         # Skip if response already exists
         if response_file.exists():
-            return
+            self.logger.info(f"REQUEST_SKIP: Response already exists for {request_id}")
+            return True
             
         try:
             # Load request
@@ -129,7 +150,7 @@ class WonderDellaProcessor:
             if not is_valid:
                 self.logger.warning(f"Request {request_id} blocked: {reason}")
                 self.create_error_response(request_id, 403, f"Blocked: {reason}")
-                return
+                return False
                 
             # Make HTTP request
             request_info = request_data['request']
@@ -180,9 +201,11 @@ class WonderDellaProcessor:
             except OSError as cleanup_error:
                 self.logger.warning(f"Failed to cleanup request file for {request_id}: {cleanup_error}")
             
+            return True  # Successfully processed
         except Exception as e:
             self.logger.error(f"Error processing {request_id}: {e}")
             self.create_error_response(request_id, 502, f"Processing error: {str(e)}")
+            return False  # Processing failed
             
     def make_http_request(self, request_data: Dict) -> requests.Response:
         """Make the actual HTTP request"""
