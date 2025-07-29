@@ -2,20 +2,36 @@
 
 Princeton's DELLA cluster wisely airgaps its GPU cluster, which protects against abuse by crypto miners or lavish self-hosted chatbots -- but makes it hard to perform training runs that rely on external resources (e.g. LLM-as-a-Judge calls, or agentic open search).
 
+
 `della_wonders` is a utility which allows scripts on DELLA's GPUs to make limited, controllable network requests to the outside world. This is accomplished by a "store-and-forward" proxy which uses Della's shared filesystem to convey HTTP requests from an air-gapped GPU node to a helper process on an internet-enabled node. 
 
 Rather marvelously, because this is realized as an HTTP *proxy*, you need make no modifications to your training scripts: just use our helper script `wonder_run`, to start them, and their network requests will be seamlessly handled.
 
-To use `della_wonders`, there are two steps:
+To use `della_wonders`, there are three steps:
 
-1. Log into an internet-enabled Della node, clone this repo, and start the helper process by running 
+1. From an internet-enabled Della node, install the `della_wonders` package into a conda env. with
+
+```
+conda install -c wug -c conda-forge della_wonders
+```
+
+2.  Then launch the processor with 
 
 	```
-	bash slurm_wonders.sh
+	start_wonders
 	```
 
-	This will submit a slurm job to run the helper process for 24 hrs, by default. 
-2. Meanwhile, in the repo where you intend to launch your training run, install the package with `conda install -c wug della_wonders`. **Wait until the job from (1) has started**, then launch your training run with some slurm script that include 
+or submit a slurm job that activates the relevant conda environment and runs this command in the background.  A sample script to do so can be found here
+
+```
+curl -O https://raw.githubusercontent.com/professorwug/della_wonders/master/slurm/slurm_start_wonders_conda # download sample script
+# edit the conda env within, then
+Scratch slurm_start_wonders_conda
+```
+
+This will submit a slurm job to run the helper process for 24 hrs.
+
+3. Meanwhile, in the repo where you intend to launch your training run, **wait until the above job has started**, then launch your training run with some slurm script that include 
 	```
 	wonder_run your_python_file.py
 	```
@@ -34,8 +50,7 @@ If your script fails to run, you may have to insert a few lines of code to loose
 
 ```bash
 # Install from anaconda.org
-conda install -c wug -c conda-forge della-wonders
-# some conda dists search conda-forge automatically
+conda install -c wug della-wonders
 
 # Or with pixi
 pixi project channel add wug  # Add the wug channel to your project
