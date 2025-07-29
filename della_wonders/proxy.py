@@ -84,27 +84,68 @@ class StoreForwardAddon:
             
             ctx.log.info(f"Serialized request {request_id} to {final_path}")
             
-            # Wait for response
+            # Wait for response with robust file handling
             response_path = self.response_dir / f"{request_id}.json"
             start_time = time.time()
             
             ctx.log.info(f"Waiting for response at {response_path}")
             
-            while not response_path.exists():
-                if time.time() - start_time > self.response_timeout:
+            response_data = None
+            max_retries = 3
+            
+            # Robust response retrieval with retries
+            while time.time() - start_time < self.response_timeout:
+                if response_path.exists():
+                    # File exists, try to read it with retries for race conditions
+                    for retry in range(max_retries):
+                        try:
+                            # Check file size to ensure it's complete
+                            file_size = response_path.stat().st_size
+                            if file_size == 0:
+                                ctx.log.warn(f"Response file empty, retry {retry + 1}/{max_retries} for {request_id}")
+                                time.sleep(0.1)
+                                continue
+                            
+                            # Try to read and parse the file
+                            with response_path.open() as f:
+                                response_data = json.load(f)
+                            
+                            ctx.log.info(f"Successfully loaded response for {request_id}")
+                            break
+                            
+                        except (json.JSONDecodeError, OSError) as e:
+                            ctx.log.warn(f"Failed to read response file, retry {retry + 1}/{max_retries} for {request_id}: {e}")
+                            if retry < max_retries - 1:
+                                time.sleep(0.1)
+                            else:
+                                ctx.log.error(f"Failed to read response after {max_retries} retries for {request_id}")
+                                response_data = None
+                    
+                    if response_data is not None:
+                        break
+                
+                time.sleep(0.2)
+            
+            # Check if we got a response
+            if response_data is None:
+                if response_path.exists():
+                    flow.response = http.Response.make(
+                        502,
+                        b"Response file corrupted or unreadable",
+                        {"Content-Type": "text/plain"}
+                    )
+                    ctx.log.error(f"Response file corrupted for {request_id}")
+                else:
                     flow.response = http.Response.make(
                         504,
                         b"Gateway Timeout: No response from relay",
                         {"Content-Type": "text/plain"}
                     )
                     ctx.log.error(f"Timeout waiting for response {request_id}")
-                    return
-                time.sleep(0.2)
+                return
                 
             # Load and reconstruct response
             try:
-                with response_path.open() as f:
-                    response_data = json.load(f)
                     
                 # Validate response integrity
                 response_content = base64.b64decode(response_data["response"]["content"])
@@ -140,13 +181,19 @@ class StoreForwardAddon:
                 
                 # Clean up files after successful processing
                 try:
-                    # Delete the response file
-                    response_path.unlink()
-                    ctx.log.info(f"Deleted response file: {response_path}")
+                    # Delete the response file first (processor may have already cleaned request)
+                    if response_path.exists():
+                        response_path.unlink()
+                        ctx.log.info(f"Deleted response file: {response_path}")
+                    else:
+                        ctx.log.info(f"Response file already cleaned: {response_path}")
                     
-                    # Delete the original request file  
-                    final_path.unlink()
-                    ctx.log.info(f"Deleted request file: {final_path}")
+                    # Delete the original request file (may already be cleaned by processor)
+                    if final_path.exists():
+                        final_path.unlink()
+                        ctx.log.info(f"Deleted request file: {final_path}")
+                    else:
+                        ctx.log.info(f"Request file already cleaned: {final_path}")
                     
                 except OSError as cleanup_error:
                     ctx.log.warn(f"Failed to cleanup files for {request_id}: {cleanup_error}")
@@ -162,11 +209,19 @@ class StoreForwardAddon:
                 
                 # Clean up files even on processing error
                 try:
+                    cleaned_files = []
                     if response_path.exists():
                         response_path.unlink()
+                        cleaned_files.append("response")
                     if final_path.exists():
                         final_path.unlink()
-                    ctx.log.info(f"Cleaned up files after processing error for {request_id}")
+                        cleaned_files.append("request")
+                    
+                    if cleaned_files:
+                        ctx.log.info(f"Cleaned up {', '.join(cleaned_files)} files after processing error for {request_id}")
+                    else:
+                        ctx.log.info(f"No files to clean up after processing error for {request_id}")
+                        
                 except OSError as cleanup_error:
                     ctx.log.warn(f"Failed to cleanup files after processing error for {request_id}: {cleanup_error}")
                 

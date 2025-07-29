@@ -100,7 +100,7 @@ def main():
     # Test configuration
     num_tests = 60  # Many dozen tests
     base_url = "http://httpbun.org"
-    endpoints = ["/get", "/json", "/user-agent", "/headers", "/ip"]
+    endpoints = ["/get", "/headers", "/ip", "/status/200", "/delay/1"]
     
     # Get shared directory (same logic as processor)
     shared_dir = os.environ.get('DELLA_SHARED_DIR')
