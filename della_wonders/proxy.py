@@ -125,7 +125,7 @@ class StoreForwardAddon:
                         final_path.unlink()
                         ctx.log.info(f"Cleaned up files after integrity failure for {request_id}")
                     except OSError as cleanup_error:
-                        ctx.log.warning(f"Failed to cleanup files after integrity failure for {request_id}: {cleanup_error}")
+                        ctx.log.warn(f"Failed to cleanup files after integrity failure for {request_id}: {cleanup_error}")
                     return
                     
                 # Reconstruct HTTP response
@@ -149,7 +149,7 @@ class StoreForwardAddon:
                     ctx.log.info(f"Deleted request file: {final_path}")
                     
                 except OSError as cleanup_error:
-                    ctx.log.warning(f"Failed to cleanup files for {request_id}: {cleanup_error}")
+                    ctx.log.warn(f"Failed to cleanup files for {request_id}: {cleanup_error}")
                     # Don't fail the request if cleanup fails
                 
             except Exception as e:
@@ -168,7 +168,7 @@ class StoreForwardAddon:
                         final_path.unlink()
                     ctx.log.info(f"Cleaned up files after processing error for {request_id}")
                 except OSError as cleanup_error:
-                    ctx.log.warning(f"Failed to cleanup files after processing error for {request_id}: {cleanup_error}")
+                    ctx.log.warn(f"Failed to cleanup files after processing error for {request_id}: {cleanup_error}")
                 
         except Exception as e:
             ctx.log.error(f"Error in request handler: {e}")

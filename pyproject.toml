@@ -1,6 +1,6 @@
 [project]
 name = "della-wonders"
-version = "1.0.0"
+version = "1.0.2"
 description = "Store-and-forward HTTP proxy for airgapped environments"
 authors = [
     {name = "Della Wonders Team", email = "dev@example.com"}
@@ -36,6 +36,7 @@ wonder_run = "della_wonders.cli:wonder_run"
 start_wonders = "della_wonders.cli:start_wonders"
 wonder_status = "della_wonders.cli:wonder_status"
 wonder_bread = "della_wonders.cli:wonder_bread"
+wonders_version = "della_wonders.cli:wonders_version"
 
 [build-system]
 requires = ["hatchling"]

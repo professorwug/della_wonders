@@ -21,8 +21,8 @@ fi
 TOKEN="${1:-$ANACONDA_API_TOKEN}"
 USERNAME="wug"
 
-# Find the conda package
-PACKAGE=$(ls della-wonders-*.conda | head -1)
+# Find the most recent conda package (newest version)
+PACKAGE=$(ls -t della-wonders-*.conda | head -1)
 
 if [[ ! -f "$PACKAGE" ]]; then
     echo "No conda package found. Run 'pixi build' first."

@@ -85,10 +85,20 @@ class DellaWondersOrchestrator:
         if not Path(script_path).exists():
             raise FileNotFoundError(f"Target script not found: {script_path}")
             
+        proxy_url = f"http://127.0.0.1:{self.proxy_port}"
         env = os.environ.copy()
         env.update({
-            "HTTP_PROXY": f"http://127.0.0.1:{self.proxy_port}",
-            "HTTPS_PROXY": f"http://127.0.0.1:{self.proxy_port}",
+            # Standard proxy environment variables
+            "HTTP_PROXY": proxy_url,
+            "HTTPS_PROXY": proxy_url,
+            "ALL_PROXY": proxy_url,  # Catch all protocols including DNS
+            "http_proxy": proxy_url,  # Lowercase variants
+            "https_proxy": proxy_url,
+            "all_proxy": proxy_url,
+            # Prevent proxy bypass
+            "NO_PROXY": "",
+            "no_proxy": "",
+            # SSL/TLS verification bypass
             "REQUESTS_CA_BUNDLE": "",  # Disable SSL verification for proxy
             "CURL_CA_BUNDLE": "",
             "SSL_VERIFY": "False",  # Additional SSL disable

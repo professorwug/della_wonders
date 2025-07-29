@@ -10,6 +10,18 @@ from pathlib import Path
 from .orchestrator import DellaWondersOrchestrator
 from .processor import WonderDellaProcessor
 
+# Get version from package metadata
+try:
+    from importlib.metadata import version
+    __version__ = version("della-wonders")
+except ImportError:
+    # Fallback for older Python versions
+    try:
+        import pkg_resources
+        __version__ = pkg_resources.get_distribution("della-wonders").version
+    except Exception:
+        __version__ = "unknown"
+
 
 def wonder_run():
     """Entry point for 'wonder_run' command"""
@@ -201,6 +213,11 @@ def wonder_status():
             print(f"  Responses: {responses}")
     else:
         print("Shared directory does not exist. Run wonder_run or wonder_process to create it.")
+
+
+def wonders_version():
+    """Entry point for 'wonders_version' command - displays version information"""
+    print(f"della-wonders version: {__version__}")
 
 
 def wonder_bread():

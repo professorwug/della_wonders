@@ -1,11 +1,11 @@
 [workspace]
-channels = ["conda-forge"]
+channels = ["conda-forge", "wug"]
 platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
 preview = ["pixi-build"]
 
 [package]
 name = "della-wonders"
-version = "1.0.0"
+version = "1.0.2"
 description = "Store-and-forward HTTP proxy for airgapped environments"
 authors = ["Della Wonders Team <dev@example.com>"]
 homepage = "https://github.com/professorwug/della_wonders"
@@ -40,9 +40,10 @@ requests = ">=2.31.0"
 [tasks]
 install = "pip install -e ."
 test-install = "pip install -e . && wonder_run --help"
-test-commands = "wonder_run --help && start_wonders --help && wonder_status --help"
+test-commands = "wonder_run --help && start_wonders --help && wonder_status --help && wonders_version"
 run-test = "wonder_run test_script.py"
-build = "pixi build"
+clean = "find . -maxdepth 1 -name 'della-wonders-*.conda' -delete || true; find . -maxdepth 1 -name 'info-della-wonders-*.tar.zst' -delete || true"
+build = "find . -maxdepth 1 -name 'della-wonders-*.conda' -delete || true; find . -maxdepth 1 -name 'info-della-wonders-*.tar.zst' -delete || true; pixi build"
 upload-conda = "./upload_conda.sh"
 
 # Development dependencies
@@ -54,6 +55,8 @@ pip = "*"
 python-dotenv = ">=1.1.1,<2"
 python-dateutil = ">=2.9.0.post0,<3"
 anaconda-client = "*"
+della-wonders = ">=1.0.0,<2"
+conda-build = ">=25.5.0,<26"
 
 [pypi-dependencies]
 della-wonders = { path = ".", editable = true }
