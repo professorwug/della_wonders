@@ -100,7 +100,7 @@ def main():
     # Test configuration
     num_tests = 60  # Many dozen tests
     base_url = "http://httpbun.org"
-    endpoints = ["/get", "/headers", "/ip", "/status/200", "/delay/1"]
+    endpoints = ["/get", "/headers", "/ip", "/status/200", "/delay/1", "/cookies", "/any", "/payload", "/redirect/1", "/status/201"]
     
     # Get shared directory (same logic as processor)
     shared_dir = os.environ.get('DELLA_SHARED_DIR')
@@ -142,8 +142,8 @@ def main():
             response = requests.get(url, timeout=15)
             test_duration = time.time() - test_start
             
-            # Check if response is successful (2xx status codes)
-            is_success = 200 <= response.status_code < 300
+            # Check if response is successful (2xx and 3xx status codes for redirects)
+            is_success = 200 <= response.status_code < 400
             
             if is_success:
                 # Track successful request
@@ -242,7 +242,7 @@ def main():
         print(f"\n📈 HTTP Status Codes:")
         for status, count in sorted(status_codes.items()):
             percentage = count / len(results) * 100
-            success_indicator = "✅" if 200 <= status < 300 else "❌"
+            success_indicator = "✅" if 200 <= status < 400 else "❌"
             print(f"  {status}: {count} ({percentage:.1f}%) {success_indicator}")
     
     # Response time statistics
