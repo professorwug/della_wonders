@@ -1,6 +1,6 @@
 [project]
 name = "della-wonders"
-version = "1.0.2"
+version = "1.0.3"
 description = "Store-and-forward HTTP proxy for airgapped environments"
 authors = [
     {name = "Della Wonders Team", email = "dev@example.com"}

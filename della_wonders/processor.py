@@ -57,12 +57,29 @@ class WonderDellaProcessor:
         """Legacy method - add_allowed_domain is deprecated"""
         self.logger.warning("add_allowed_domain is deprecated - use add_blocked_domain to block specific domains")
         # Do nothing since we're now using blocklist approach
+    
+    def _cleanup_mitmproxy_cache(self):
+        """Clean up mitmproxy cache to prevent DNS resolution issues"""
+        import shutil
+        import os
+        mitmproxy_dir = os.path.expanduser("~/.mitmproxy")
+        if os.path.exists(mitmproxy_dir):
+            try:
+                self.logger.info("Performing periodic mitmproxy cache cleanup")
+                shutil.rmtree(mitmproxy_dir)
+            except Exception as e:
+                self.logger.warning(f"Failed to clean mitmproxy cache: {e}")
         
     def process_requests(self):
         """Main processing loop"""
         self.logger.info("Started wonder_della processor")
         self.logger.info(f"Monitoring: {self.request_dir}")
         self.logger.info(f"Writing to: {self.response_dir}")
+        
+        # Track cache cleanup timing
+        import time as time_module
+        last_cache_cleanup = time_module.time()
+        cache_cleanup_interval = 300  # 5 minutes
         
         while self.running:
             try:
@@ -75,6 +92,12 @@ class WonderDellaProcessor:
                     if not self.running:
                         break
                     self.process_single_request(request_file)
+                
+                # Periodic cache cleanup to prevent DNS resolution issues
+                current_time = time_module.time()
+                if current_time - last_cache_cleanup > cache_cleanup_interval:
+                    self._cleanup_mitmproxy_cache()
+                    last_cache_cleanup = current_time
                     
                 time.sleep(0.5)  # Polling interval
             except KeyboardInterrupt:

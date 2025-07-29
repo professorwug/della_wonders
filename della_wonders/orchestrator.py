@@ -45,6 +45,14 @@ class DellaWondersOrchestrator:
             
     def start_proxy(self):
         """Start mitmproxy with our addon"""
+        # Clear mitmproxy cache to prevent DNS resolution issues
+        import shutil
+        import os
+        mitmproxy_dir = os.path.expanduser("~/.mitmproxy")
+        if os.path.exists(mitmproxy_dir):
+            self.logger.info(f"Clearing mitmproxy cache: {mitmproxy_dir}")
+            shutil.rmtree(mitmproxy_dir)
+        
         # Get the proxy addon path from the module
         from pathlib import Path
         proxy_script = Path(__file__).parent / "proxy.py"
