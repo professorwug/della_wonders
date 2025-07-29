@@ -54,19 +54,35 @@ def main():
             response = requests.get(url, timeout=15)
             test_duration = time.time() - test_start
             
-            # Track successful request
-            results.append({
-                'test_num': i + 1,
-                'url': url,
-                'status': 'SUCCESS',
-                'status_code': response.status_code,
-                'response_time': test_duration,
-                'delay_before': delay,
-                'error': None
-            })
+            # Check if response is successful (2xx status codes)
+            is_success = 200 <= response.status_code < 300
+            
+            if is_success:
+                # Track successful request
+                results.append({
+                    'test_num': i + 1,
+                    'url': url,
+                    'status': 'SUCCESS',
+                    'status_code': response.status_code,
+                    'response_time': test_duration,
+                    'delay_before': delay,
+                    'error': None
+                })
+                response_times.append(test_duration)
+            else:
+                # Track HTTP error as failure
+                results.append({
+                    'test_num': i + 1,
+                    'url': url,
+                    'status': 'FAILURE',
+                    'status_code': response.status_code,
+                    'response_time': test_duration,
+                    'delay_before': delay,
+                    'error': f"HTTP {response.status_code}: {response.reason}"
+                })
+                errors[f"HTTP_{response.status_code}"] += 1
             
             status_codes[response.status_code] += 1
-            response_times.append(test_duration)
             
         except Exception as e:
             test_duration = time.time() - test_start
@@ -108,8 +124,9 @@ def main():
     if status_codes:
         print(f"\n📈 HTTP Status Codes:")
         for status, count in sorted(status_codes.items()):
-            percentage = count / len(successes) * 100 if successes else 0
-            print(f"  {status}: {count} ({percentage:.1f}%)")
+            percentage = count / len(results) * 100
+            success_indicator = "✅" if 200 <= status < 300 else "❌"
+            print(f"  {status}: {count} ({percentage:.1f}%) {success_indicator}")
     
     # Response time statistics
     if response_times:
@@ -147,11 +164,21 @@ def main():
     if success_rate >= 95:
         print("  ✅ Excellent reliability - DNS cache management working well")
     elif success_rate >= 80:
-        print("  ⚠️  Good reliability - Minor DNS issues detected")
+        print("  ⚠️  Good reliability - Minor issues detected")
     elif success_rate >= 50:
-        print("  ⚠️  Moderate reliability - DNS cache issues likely present")
+        print("  ⚠️  Moderate reliability - Significant issues present")
     else:
-        print("  ❌ Poor reliability - Significant DNS resolution problems")
+        print("  ❌ Poor reliability - Major problems detected")
+    
+    # Specific proxy error analysis
+    if 502 in status_codes:
+        proxy_errors = status_codes[502]
+        proxy_error_rate = proxy_errors / len(results) * 100
+        print(f"  🔥 Proxy errors (502): {proxy_errors} ({proxy_error_rate:.1f}%) - DNS/cache issues likely")
+    
+    if 404 in status_codes:
+        not_found = status_codes[404] 
+        print(f"  📍 404 errors: {not_found} - Endpoint availability issues")
     
     if response_times and statistics.mean(response_times) > 5.0:
         print("  ⚠️  High average response times detected")
